@@ -7,19 +7,19 @@ response = requests.get(
 ).json()
 
 user_activities = {}
-for activity in response["activities"]:
+for activity in response["activities"]:  # O(n)
     if activity["user_id"] not in user_activities:
         user_activities[activity["user_id"]] = []
     user_activities[activity["user_id"]].append(activity)
 
 # order user activities by their first_seen_at
-for user_id in user_activities:
+for user_id in user_activities:  # O(n) x O(m log m) = n x m_log_m
     user_activities[user_id] = sorted(
         user_activities[user_id], key=lambda k: k["first_seen_at"]
     )
 
 user_sessions = {}
-for user_id, activities in user_activities.items():
+for user_id, activities in user_activities.items():  # O(n) x O(m) = n x m
     user_sessions[user_id] = []
     for activity in activities:
         if (
@@ -56,3 +56,5 @@ for user_id, activities in user_activities.items():
                 )
             ).total_seconds()
 print(json.dumps(user_sessions))
+
+# complexity: O(n) + O(n x m_log_m) + O(n x m) = O(n x m_log_m), where n is the number of users and m is the number of activities for each user
