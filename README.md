@@ -19,7 +19,7 @@
 - Go to the project's directory and run the following command:
   - `pip install -r requirements.txt`
 - Add a environment variable called `API_TOKEN` with the API's token.
-  - If you don't know how to that, simply run: `API_TOKEN=<token> python3 main.py`
+  - If you don't know how to do that, simply run: `API_TOKEN=<token> python3 main.py`
 - Run: `python main.py` (or `python3 main.py`) 
 
 ### Using Docker
