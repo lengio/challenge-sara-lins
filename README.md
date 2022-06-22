@@ -28,7 +28,7 @@ If for some weird reason you don't have a python interpreter, but do have Docker
 Run the following commands:
 
 - `docker build -t testslang .`
-- `docker run -e API_TOKEN=<token> -it testslang`, where <token> is the API's token.
+- `docker run -e API_TOKEN=<token> -it testslang`, where `<token>` is the API's token.
 
 
 
