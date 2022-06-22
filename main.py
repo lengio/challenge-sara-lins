@@ -1,4 +1,5 @@
-import requests, os, json
+from fastapi import Body
+import requests, os
 from datetime import datetime
 
 my_headers = {"Authorization": f'Bearer {os.environ["API_TOKEN"]}'}
@@ -18,16 +19,17 @@ for user_id in user_activities:  # O(n) x O(m log m) = n x m_log_m
         user_activities[user_id], key=lambda k: k["first_seen_at"]
     )
 
-user_sessions = {}
+user_sessions = {"user_sessions": {}}
 for user_id, activities in user_activities.items():  # O(n) x O(m) = n x m
-    user_sessions[user_id] = []
+    user_sessions["user_sessions"][user_id] = []
     for activity in activities:
         if (
-            not user_sessions[user_id]
+            not user_sessions["user_sessions"][user_id]
             or (
                 datetime.strptime(activity["first_seen_at"], "%Y-%m-%dT%H:%M:%S.%f%z")
                 - datetime.strptime(
-                    user_sessions[user_id][-1]["ended_at"], "%Y-%m-%dT%H:%M:%S.%f%z"
+                    user_sessions["user_sessions"][user_id][-1]["ended_at"],
+                    "%Y-%m-%dT%H:%M:%S.%f%z",
                 )
             ).total_seconds()
             > 300
@@ -43,18 +45,30 @@ for user_id, activities in user_activities.items():  # O(n) x O(m) = n x m
                     )
                 ).total_seconds(),
             }
-            user_sessions[user_id].append(temp_dict)
+            user_sessions["user_sessions"][user_id].append(temp_dict)
         else:
-            user_sessions[user_id][-1]["ended_at"] = activity["answered_at"]
-            user_sessions[user_id][-1]["activity_ids"].append(activity["id"])
-            user_sessions[user_id][-1]["duration_seconds"] = (
+            user_sessions["user_sessions"][user_id][-1]["ended_at"] = activity[
+                "answered_at"
+            ]
+            user_sessions["user_sessions"][user_id][-1]["activity_ids"].append(
+                activity["id"]
+            )
+            user_sessions["user_sessions"][user_id][-1]["duration_seconds"] = (
                 datetime.strptime(
-                    user_sessions[user_id][-1]["ended_at"], "%Y-%m-%dT%H:%M:%S.%f%z"
+                    user_sessions["user_sessions"][user_id][-1]["ended_at"],
+                    "%Y-%m-%dT%H:%M:%S.%f%z",
                 )
                 - datetime.strptime(
-                    user_sessions[user_id][-1]["started_at"], "%Y-%m-%dT%H:%M:%S.%f%z"
+                    user_sessions["user_sessions"][user_id][-1]["started_at"],
+                    "%Y-%m-%dT%H:%M:%S.%f%z",
                 )
             ).total_seconds()
-print(json.dumps(user_sessions))
 
 # complexity: O(n) + O(n x m_log_m) + O(n x m) = O(n x m_log_m), where n is the number of users and m is the number of activities for each user
+
+requests.post(
+    "https://api.slangapp.com/challenges/v1/activities/sessions",
+    headers=my_headers,
+    json=user_sessions,
+    timeout=5,
+)
