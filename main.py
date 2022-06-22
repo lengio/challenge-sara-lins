@@ -1,4 +1,4 @@
-import requests, os
+import requests, os, json
 from datetime import datetime
 
 my_headers = {"Authorization": f'Bearer {os.environ["API_TOKEN"]}'}
@@ -18,22 +18,41 @@ for user_id in user_activities:
         user_activities[user_id], key=lambda k: k["first_seen_at"]
     )
 
-print(user_activities)
-
 user_sessions = {}
 for user_id, activities in user_activities.items():
     user_sessions[user_id] = []
     for activity in activities:
-        if not user_sessions[user_id]:
+        if (
+            not user_sessions[user_id]
+            or (
+                datetime.strptime(
+                    user_sessions[user_id][-1]["ended_at"], "%Y-%m-%dT%H:%M:%S.%f%z"
+                )
+                - datetime.strptime(activity["first_seen_at"], "%Y-%m-%dT%H:%M:%S.%f%z")
+            ).total_seconds()
+            > 300
+        ):
             temp_dict = {
                 "ended_at": activity["answered_at"],
                 "started_at": activity["first_seen_at"],
                 "activity_ids": [activity["id"]],
                 "duration_seconds": (
-                    datetime.strptime(activity["answered_at"], "%Y-%m-%dT%H:%M:%S%z")
+                    datetime.strptime(activity["answered_at"], "%Y-%m-%dT%H:%M:%S.%f%z")
                     - datetime.strptime(
-                        activity["first_seen_at"], "%Y-%m-%dT%H:%M:%S%z"
+                        activity["first_seen_at"], "%Y-%m-%dT%H:%M:%S.%f%z"
                     )
                 ).total_seconds(),
             }
             user_sessions[user_id].append(temp_dict)
+        else:
+            user_sessions[user_id][-1]["ended_at"] = activity["answered_at"]
+            user_sessions[user_id][-1]["activity_ids"].append(activity["id"])
+            user_sessions[user_id][-1]["duration_seconds"] = (
+                datetime.strptime(
+                    user_sessions[user_id][-1]["ended_at"], "%Y-%m-%dT%H:%M:%S.%f%z"
+                )
+                - datetime.strptime(
+                    user_sessions[user_id][-1]["started_at"], "%Y-%m-%dT%H:%M:%S.%f%z"
+                )
+            ).total_seconds()
+print(json.dumps(user_sessions))
