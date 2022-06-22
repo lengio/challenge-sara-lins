@@ -25,16 +25,16 @@ for user_id, activities in user_activities.items():
         if (
             not user_sessions[user_id]
             or (
-                datetime.strptime(
+                datetime.strptime(activity["first_seen_at"], "%Y-%m-%dT%H:%M:%S.%f%z")
+                - datetime.strptime(
                     user_sessions[user_id][-1]["ended_at"], "%Y-%m-%dT%H:%M:%S.%f%z"
                 )
-                - datetime.strptime(activity["first_seen_at"], "%Y-%m-%dT%H:%M:%S.%f%z")
             ).total_seconds()
             > 300
         ):
             temp_dict = {
-                "ended_at": activity["answered_at"],
                 "started_at": activity["first_seen_at"],
+                "ended_at": activity["answered_at"],
                 "activity_ids": [activity["id"]],
                 "duration_seconds": (
                     datetime.strptime(activity["answered_at"], "%Y-%m-%dT%H:%M:%S.%f%z")
